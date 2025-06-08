@@ -1,5 +1,7 @@
 # WP WhatsApp Evolution API
 
+Version: 1.0.0-beta
+
 Un plugin de WordPress que integra la gestión de WhatsApp para vendedores de Dokan, utilizando **n8n como intermediario** para comunicarse con **Evolution API**. Simplifica la lógica del plugin al delegar la complejidad de la API a flujos de trabajo de n8n, ofreciendo una solución robusta y escalable para la conexión de WhatsApp.
 
 ---
