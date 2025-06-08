@@ -97,5 +97,6 @@ Este plugin está licenciado bajo la [GPL-2.0+ License](http://www.gnu.org/licen
 ## ✉️ Contacto
 
 Para preguntas o soporte, puedes contactar a https://brasdrive.com.br
+Español - English - Português
 
 ---
