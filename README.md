@@ -1,103 +1,207 @@
-# WP WhatsApp Evolution API
+# WP WhatsApp Evolution API (Integración para Vendedores Dokan)
 
-Version: 1.0.0-beta
+Un plugin de WordPress que integra la gestión de WhatsApp directamente en el panel de control de cada vendedor de Dokan, utilizando n8n como intermediario para comunicarse con la Evolution API. Permite a cada vendedor gestionar su propia conexión de WhatsApp, incluyendo la generación y escaneo de códigos QR para vincular su cuenta y ver el estado de su conexión en tiempo real.
 
-Un plugin de WordPress que integra la gestión de WhatsApp para vendedores de Dokan, utilizando **n8n como intermediario** para comunicarse con **Evolution API**. Simplifica la lógica del plugin al delegar la complejidad de la API a flujos de trabajo de n8n, ofreciendo una solución robusta y escalable para la conexión de WhatsApp.
+## Tabla de Contenidos
+
+- [Descripción](https://www.google.com/search?q=%23descripci%C3%B3n)
+- [Características](https://www.google.com/search?q=%23caracter%C3%ADsticas)
+- [Requisitos](https://www.google.com/search?q=%23requisitos)
+- [Instalación](https://www.google.com/search?q=%23instalaci%C3%B3n)
+  - [Instalación del Plugin de WordPress](https://www.google.com/search?q=%23instalaci%C3%B3n-del-plugin-de-wordpress)
+  - [Configuración de n8n](https://www.google.com/search?q=%23configuraci%C3%B3n-de-n8n)
+    - [Configuración de Evolution API](https://www.google.com/search?q=%23configuraci%C3%B3n-de-evolution-api)
+    - [Ejemplos de Workflows de n8n](https://www.google.com/search?q=%23ejemplos-de-workflows-de-n8n)
+- [Uso](https://www.google.com/search?q=%23uso)
+  - [Para Administradores de WordPress](https://www.google.com/search?q=%23para-administradores-de-wordpress)
+  - [Para Vendedores de Dokan](https://www.google.com/search?q=%23para-vendedores-de-dokan)
+- [Desinstalación Segura](https://www.google.com/search?q=%23desinstalaci%C3%B3n-segura)
+- [Desarrollo](https://www.google.com/search?q=%23desarrollo)
+- [Licencia](https://www.google.com/search?q=%23licencia)
+- [Contribuciones](https://www.google.com/search?q=%23contribuciones)
 
 ---
 
-## 🚀 Características Principales (Fase 1)
+## Descripción
 
-- **Integración n8n:** Conecta tu instancia de WordPress de forma segura con tus flujos de trabajo de n8n mediante una URL de webhook y un secreto compartido.
-- **Gestión de WhatsApp por Vendedor:** Permite a cada vendedor de Dokan gestionar su propia conexión de WhatsApp desde su panel de control.
-- **Generación de QR y Estado:** Los vendedores pueden generar y escanear códigos QR para vincular su cuenta de WhatsApp y ver el estado de su conexión en tiempo real.
-- **Lógica de Plugin Simplificada:** El plugin se enfoca en la interfaz de usuario y la comunicación segura con n8n, mientras que n8n maneja las interacciones directas con Evolution API.
-- **Actualizaciones de Estado en Tiempo Real:** Recibe actualizaciones de estado de la conexión de WhatsApp desde n8n a través de un endpoint REST API dedicado en WordPress.
+Este plugin resuelve el desafío de integrar WhatsApp para múltiples vendedores en una plataforma Dokan. A diferencia de una integración global, esta refactorización permite que **cada vendedor Dokan** tenga su propia cuenta de WhatsApp conectada a través de Evolution API, todo gestionado desde su propio panel de control. n8n actúa como la capa de abstracción, simplificando la comunicación entre WordPress y la API de WhatsApp, y ofreciendo flexibilidad para futuras automatizaciones.
 
 ---
 
-## 🛠️ Requisitos
+## Características
+
+- **Gestión Individual de WhatsApp**: Cada vendedor de Dokan puede conectar y gestionar su propia cuenta de WhatsApp.
+- **Generación de QR para Conexión**: Los vendedores pueden generar y escanear códigos QR directamente desde su panel de control Dokan para vincular su número de WhatsApp.
+- **Estado de Conexión en Tiempo Real**: Visualización del estado actual de la conexión de WhatsApp (conectado, desconectado, escaneando QR) desde el panel del vendedor.
+- **Envío de Mensajes de Prueba**: Un formulario simple para que los vendedores envíen mensajes de prueba y confirmen la funcionalidad.
+- **Intermediario n8n Flexible**: Utiliza n8n para orquestar las llamadas a Evolution API, lo que permite una personalización y expansión sencilla de los flujos de trabajo sin modificar el código del plugin.
+- **Configuración Centralizada de n8n**: El administrador del sitio configura la URL base y el token de autenticación de n8n una sola vez.
+- **Limpieza Segura de Datos**: Opción para eliminar todos los datos del plugin (configuraciones y datos de conexión de vendedores) al desinstalarlo.
+
+---
+
+## Requisitos
 
 Para que este plugin funcione correctamente, necesitas lo siguiente:
 
-- **WordPress 4.9 o superior.**
-- **Plugin Dokan Multivendor Marketplace** (versión 3.0 o superior) activo.
-- Una **instancia de n8n** funcionando y accesible públicamente (autohospedada o en la nube).
-- Acceso a una **instancia de Evolution API** para la gestión de WhatsApp.
+- **WordPress**: Versión 5.8 o superior.
+- **Dokan Multivendor Marketplace**: Plugin Dokan activo y configurado.
+- **PHP**: Versión 7.4 o superior.
+- **n8n**: Una instancia de n8n (self-hosted o en la nube) configurada y accesible desde tu servidor de WordPress.
+- **Evolution API**: Una cuenta activa y una instancia de Evolution API configurada para tus sesiones de WhatsApp.
 
 ---
 
-## 📦 Instalación
+## Instalación
 
-1. **Descarga** el archivo ZIP de la última versión del plugin o clona este repositorio en tu directorio de plugins de WordPress (`wp-content/plugins/`).
-2. **Descomprime** el archivo (si lo descargaste) en una carpeta llamada `wp-whatsapp-evolution-api`.
-3. **Activa** el plugin desde el panel de administración de WordPress.
+### Instalación del Plugin de WordPress
+
+1. **Descarga el plugin**: Obtén la última versión del plugin desde el repositorio de GitHub.
+2. **Sube el plugin**:
+   - Ve a tu panel de administración de WordPress.
+   - Navega a **Plugins > Añadir nuevo**.
+   - Haz clic en el botón **Subir Plugin**.
+   - Selecciona el archivo `.zip` que descargaste y haz clic en **Instalar ahora**.
+3. **Activa el plugin**: Una vez instalado, haz clic en **Activar Plugin**.
+4. **Configura las opciones de n8n**:
+   - Ve a **Ajustes > WP WhatsApp Evolution API** en tu panel de administración de WordPress.
+   - Introduce la **URL Base de tu Webhook de n8n** (ej. `https://your-n8n-instance.com/webhook/`). Asegúrate de que termine con una barra (`/`).
+   - Si tu webhook de n8n requiere un token de autenticación (ej. para autenticación Bearer), introdúcelo en el campo **Token de Autenticación n8n**.
+   - Configura la opción **Eliminar datos al desinstalar** según tu preferencia.
+
+### Configuración de n8n
+
+Este plugin se comunica con n8n a través de **Webhooks**. Necesitarás crear **tres (o más) workflows separados** en n8n que respondan a los eventos enviados desde WordPress:
+
+1. `qr_generation`: Para iniciar el proceso de obtención de un código QR.
+2. `session_status`: Para verificar el estado de una sesión de WhatsApp.
+3. `message_send`: Para enviar mensajes desde una sesión específica.
+4. **(Opcional pero recomendado) Evolution API Event Listener**: Un cuarto workflow que recibe eventos de Evolution API (ej. `CONNECTED`, `DISCONNECTED`, `QRCODE`) y actualiza el estado en WordPress.
+
+#### Configuración de Evolution API
+
+Asegúrate de que tu instancia de Evolution API esté funcionando. Necesitarás:
+
+- La **URL de tu instancia de Evolution API**.
+- Un **Token de Evolution API** (si lo requiere tu configuración).
+
+#### Ejemplos de Workflows de n8n
+
+A continuación, se describen los componentes clave para cada workflow.
+
+**Workflow 1: `qr_generation`**
+
+- **Nodo Webhook**:
+  - **Listen on URL**: `[Tu_URL_Base_n8n]/qr_generation`
+  - **HTTP Method**: `POST`
+  - **JSON Body**: Esperará `{"eventType": "qr_generation", "sessionName": "dokan_vendor_XYZ", "vendorId": XYZ}`
+- **Nodo HTTP Request (Evolution API - Get QR)**:
+  - **Method**: `GET`
+  - **URL**: `[Tu_Evolution_API_URL]/auth/qr?session={{ $json.sessionName }}`
+  - **Headers**: `Authorization: Bearer [Tu_Evolution_API_Token]`
+  - **Response Format**: `JSON`
+- **Nodo If (Check QR Response)**:
+  - **Condition**: `{{ $json.data.qrcode }}` is not empty.
+- **Nodo Respond to Webhook (Success)**:
+  - **Response Mode**: `JSON`
+  - **JSON Body**: `{ "success": true, "message": "QR code generated successfully.", "data": { "status": "QRCODE", "qrCodeUrl": "{{ $json.data.qrcode }}" } }`
+  - **HTTP Status Code**: `200`
+- **Nodo WordPress (Update User Meta - Opcional)**: Si deseas que n8n actualice el estado directamente en WordPress, puedes añadir un nodo WordPress aquí para actualizar `dokan_whatsapp_qr_code_url` y `dokan_whatsapp_session_status` para el `vendorId`.
+- **Nodo Respond to Webhook (Error)**:
+  - **Response Mode**: `JSON`
+  - **JSON Body**: `{ "success": false, "message": "Failed to retrieve QR code from Evolution API.", "data": {{ $json.data }} }`
+  - **HTTP Status Code**: `500`
+
+**Workflow 2: `session_status`**
+
+- **Nodo Webhook**:
+  - **Listen on URL**: `[Tu_URL_Base_n8n]/session_status`
+  - **HTTP Method**: `GET`
+  - **JSON Body**: Esperará `{"eventType": "session_status", "sessionName": "dokan_vendor_XYZ", "vendorId": XYZ}`
+- **Nodo HTTP Request (Evolution API - Get Status)**:
+  - **Method**: `GET`
+  - **URL**: `[Tu_Evolution_API_URL]/session/status?session={{ $json.sessionName }}`
+  - **Headers**: `Authorization: Bearer [Tu_Evolution_API_Token]`
+- **Nodo Respond to Webhook**:
+  - **Response Mode**: `JSON`
+  - **JSON Body**: `{ "success": true, "message": "Session status retrieved.", "data": { "status": "{{ $json.data.status }}" } }` (Asegúrate de que Evolution API devuelve un campo `status`).
+  - **HTTP Status Code**: `200`
+- **Nodo WordPress (Update User Meta - Opcional)**: Actualiza `dokan_whatsapp_session_status` y `dokan_whatsapp_qr_code_url` (borrar si el estado no es QRCODE).
+
+**Workflow 3: `message_send`**
+
+- **Nodo Webhook**:
+  - **Listen on URL**: `[Tu_URL_Base_n8n]/message_send`
+  - **HTTP Method**: `POST`
+  - **JSON Body**: Esperará `{"eventType": "message_send", "sessionName": "dokan_vendor_XYZ", "to": "...", "message": "...", "vendorId": XYZ}`
+- **Nodo HTTP Request (Evolution API - Send Message)**:
+  - **Method**: `POST`
+  - **URL**: `[Tu_Evolution_API_URL]/message/send?session={{ $json.sessionName }}`
+  - **Headers**: `Content-Type: application/json`, `Authorization: Bearer [Tu_Evolution_API_Token]`
+  - **Body**: `{ "number": "{{ $json.to }}", "text": "{{ $json.message }}" }`
+- **Nodo Respond to Webhook**:
+  - **Response Mode**: `JSON`
+  - **JSON Body**: `{ "success": true, "message": "Message sent.", "data": {{ $json.data }} }`
+  - **HTTP Status Code**: `200`
+
+**Workflow 4 (Opcional): Evolution API Event Listener**
+
+- **Nodo Webhook**:
+  - **Listen on URL**: `[Tu_URL_Base_n8n]/evolution_api_events` (Configura Evolution API para enviar eventos a esta URL).
+  - **HTTP Method**: `POST`
+- **Nodo Set**: Para extraer el `vendorId` de `session` (ej. `dokan_vendor_123` -> `123`) y el tipo de evento/estado.
+- **Nodo WordPress (Update User Meta)**: Actualiza `dokan_whatsapp_session_status` y `dokan_whatsapp_qr_code_url` (si aplica) para el `vendorId` correspondiente.
 
 ---
 
-## ⚙️ Configuración
+## Uso
 
-### 1. Configuración del Plugin en WordPress
+### Para Administradores de WordPress
 
-Después de activar el plugin:
+Una vez instalado, el administrador del sitio solo necesita configurar la URL base y el token de n8n en **Ajustes > WP WhatsApp Evolution API**. Todas las configuraciones específicas por vendedor se gestionan automáticamente a través de Dokan.
 
-- Ve a **Ajustes > WhatsApp n8n** en tu panel de administración de WordPress.
-- **n8n Base Webhook URL:** Introduce la URL base de tus webhooks de n8n (ej., `https://your-n8n.com/webhook/`). Asegúrate de que termine con una barra `/`.
-- **n8n Shared Secret:** Define un secreto compartido fuerte y aleatorio (ej., una cadena de 32 caracteres). Este mismo secreto lo configurarás en tus nodos de webhook de n8n para autenticar las comunicaciones.
+### Para Vendedores de Dokan
 
-### 2. Configuración de Workflows en n8n
-
-Debes crear los siguientes flujos de trabajo en tu instancia de n8n. Asegúrate de configurar los nodos de `Webhook` con la opción "Header Auth" y la clave `X-WWEA-SECRET` usando el **mismo secreto compartido** que definiste en WordPress.
-
-#### a. `get-qr-code` Workflow (Webhook POST)
-
-- **Trigger:** `Webhook` (Método: `POST`, Autenticación: `Header Auth` con `X-WWEA-SECRET`).
-- **Entrada esperada:** `vendor_id` (int), `instance_name` (string) en el cuerpo JSON.
-- **Acción:** Llama a tu Evolution API para obtener el código QR de la instancia (`GET /instance/qrcode/{instance_name}`).
-- **Salida esperada:** Devuelve una respuesta JSON al plugin de WordPress con el código QR, como `{"qr_code": "data:image/png;base64,..."}` o `{"qr_code": "https://url.to/qr.png"}`.
-
-#### b. `get-status` Workflow (Webhook POST)
-
-- **Trigger:** `Webhook` (Método: `POST`, Autenticación: `Header Auth` con `X-WWEA-SECRET`).
-- **Entrada esperada:** `vendor_id` (int), `instance_name` (string) en el cuerpo JSON.
-- **Acción:** Llama a tu Evolution API para obtener el estado de conexión de la instancia (`GET /instance/connectionState/{instance_name}`).
-- **Salida esperada:** Devuelve una respuesta JSON al plugin de WordPress con el estado, como `{"status": "connected", "connection_info": {"device": "...", "phone": "..."}}`.
-
-#### c. `evolution-api-webhook-listener` Workflow (Webhook POST)
-
-- **Trigger:** `Webhook` (Método: `POST`, esta URL será la que configures en Evolution API para los eventos de webhook).
-- **Entrada esperada:** El payload de evento de Evolution API (que contiene `instance_name`, `status`, etc.).
-- **Acción:** Extrae `instance_name` y el nuevo `status` (y cualquier `connection_info` relevante) del payload de Evolution API.
-- **Salida:** Realiza una solicitud HTTP POST al endpoint REST API de WordPress: `https://your-wordpress-site.com/wp-json/dokan-whatsapp/v1/status-update`. Asegúrate de incluir el encabezado `X-WWEA-SECRET` con tu secreto compartido en esta solicitud.
-  - **Cuerpo de la solicitud a WP:** `{"instance_name": "...", "status": "...", "connection_info": {...}}`
+1. **Accede al Panel de Vendedor**: Inicia sesión en tu cuenta de vendedor de Dokan.
+2. **Navega a WhatsApp**: En el menú lateral del dashboard de vendedor, verás una nueva opción de menú llamada "**WhatsApp**".
+3. **Gestiona tu Conexión**:
+   - **Ver Estado**: El estado actual de tu conexión de WhatsApp se mostrará automáticamente.
+   - **Generar QR**: Haz clic en el botón "**Generate New QR Code**" para solicitar un nuevo código QR. Escanéalo con tu aplicación de WhatsApp en tu teléfono para vincular tu cuenta.
+   - **Verificar Estado**: Utiliza el botón "**Check Status**" para actualizar manualmente el estado de tu conexión.
+   - **Enviar Mensaje de Prueba**: Usa la sección "Send a Test Message" para enviar un mensaje a un número específico y confirmar que tu conexión funciona.
 
 ---
 
-## 🚀 Uso para Vendedores de Dokan
+## Desinstalación Segura
 
-Una vez configurado, los vendedores de Dokan verán una nueva pestaña de **"WhatsApp"** en su panel de control:
+El plugin incluye un archivo `uninstall.php` que te permite controlar la eliminación de los datos al desinstalarlo.
 
-1. **Guarda tu número de WhatsApp:** Introduce el número de teléfono de WhatsApp (con código de país, ej., `+1234567890`) que deseas conectar.
-2. **Conectar WhatsApp / Generar QR Code:** Haz clic en este botón para solicitar un nuevo código QR.
-3. **Escanea el QR:** Utiliza la aplicación móvil de WhatsApp en tu teléfono para escanear el código QR. ¡Asegúrate de que no haya ninguna sesión de WhatsApp activa en tu teléfono al momento de escanear!
-4. **Estado de Conexión:** El plugin mostrará el estado actual de tu conexión (Conectado, Desconectado, Escaneando, Error). Puedes hacer clic en "Refrescar Estado" para obtener la información más reciente.
-
----
-
-## 🤝 Contribución
-
-¡Las contribuciones son bienvenidas! Si encuentras un error, tienes una sugerencia de mejora o quieres añadir una nueva característica, por favor, abre un "Issue" o envía un "Pull Request".
+1. **Configuración de Desinstalación**: Antes de desinstalar, ve a **Ajustes > WP WhatsApp Evolution API**.
+2. **Opción "Eliminar datos al desinstalar"**:
+   - Si **marcas** esta opción, al desinstalar el plugin se eliminarán todas las opciones globales (URL de n8n, token) y todos los metadatos de usuario (estado de sesión y QR) asociados a las conexiones de WhatsApp de los vendedores. **¡Esta acción es irreversible!**
+   - Si **no marcas** esta opción (valor por defecto), al desinstalar el plugin, las configuraciones y los metadatos de usuario permanecerán en tu base de datos. Esto es útil si planeas reinstalar el plugin más tarde o si quieres conservar un registro de los datos.
+3. **Desinstala el plugin**: Desde la sección **Plugins instalados**, desactiva el plugin y luego haz clic en "Borrar".
 
 ---
 
-## 📄 Licencia
+## Desarrollo
 
-Este plugin está licenciado bajo la [GPL-2.0+ License](http://www.gnu.org/licenses/gpl-2.0.txt).
+Este plugin está diseñado para ser extensible. Si deseas contribuir o personalizarlo:
+
+- Clona el repositorio de GitHub.
+- Utiliza los hooks de WordPress y Dokan para añadir o modificar funcionalidades.
+- Amplía los flujos de n8n para incorporar automatizaciones más complejas (ej. notificaciones de pedidos, respuestas automáticas, etc.).
 
 ---
 
-## ✉️ Contacto (Español - English - Português)
+## Licencia
 
-Para preguntas o soporte, puedes contactar a https://brasdrive.com.br
+Este plugin está bajo la licencia GPL-2.0 o posterior. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Si encuentras un error o tienes una sugerencia de mejora, por favor, abre un "Issue" o envía un "Pull Request" en el repositorio de GitHub.
 
 ---
