@@ -4,21 +4,21 @@ Un plugin de WordPress que integra la gestión de WhatsApp directamente en el pa
 
 ## Tabla de Contenidos
 
-- [Descripción](https://www.google.com/search?q=%23descripci%C3%B3n)
-- [Características](https://www.google.com/search?q=%23caracter%C3%ADsticas)
-- [Requisitos](https://www.google.com/search?q=%23requisitos)
-- [Instalación](https://www.google.com/search?q=%23instalaci%C3%B3n)
-  - [Instalación del Plugin de WordPress](https://www.google.com/search?q=%23instalaci%C3%B3n-del-plugin-de-wordpress)
-  - [Configuración de n8n](https://www.google.com/search?q=%23configuraci%C3%B3n-de-n8n)
-    - [Configuración de Evolution API](https://www.google.com/search?q=%23configuraci%C3%B3n-de-evolution-api)
-    - [Ejemplos de Workflows de n8n](https://www.google.com/search?q=%23ejemplos-de-workflows-de-n8n)
-- [Uso](https://www.google.com/search?q=%23uso)
-  - [Para Administradores de WordPress](https://www.google.com/search?q=%23para-administradores-de-wordpress)
-  - [Para Vendedores de Dokan](https://www.google.com/search?q=%23para-vendedores-de-dokan)
-- [Desinstalación Segura](https://www.google.com/search?q=%23desinstalaci%C3%B3n-segura)
-- [Desarrollo](https://www.google.com/search?q=%23desarrollo)
-- [Licencia](https://www.google.com/search?q=%23licencia)
-- [Contribuciones](https://www.google.com/search?q=%23contribuciones)
+- [Descripción](#descripción)
+- [Características](#características)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+  - [Instalación del Plugin de WordPress](#instalación-del-plugin-de-wordpress)
+  - [Configuración de n8n](#configuración-de-n8n)
+    - [Configuración de Evolution API](#configuración-de-evolution-api)
+    - [Ejemplos de Workflows de n8n](#ejemplos-de-workflows-de-n8n)
+- [Uso](#uso)
+  - [Para Administradores de WordPress](#para-administradores-de-wordpress)
+  - [Para Vendedores de Dokan](#para-vendedores-de-dokan)
+- [Desinstalación Segura](#desinstalación-segura)
+- [Desarrollo](#desarrollo)
+- [Licencia](#licencia)
+- [Contribuciones](#contribuciones)
 
 ---
 
