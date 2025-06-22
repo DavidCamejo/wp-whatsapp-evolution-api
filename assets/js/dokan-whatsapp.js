@@ -1,6 +1,3 @@
-/* wp-whatsapp-evolution-api/assets/js/dokan-whatsapp.js */
-
-/* Maneja la interactividad en el panel del vendedor, realizando llamadas AJAX a la API REST de WordPress */
 jQuery(document).ready(function($) {
     // Verificar si wpweaDokan está definido antes de usarlo
     if (typeof wpweaDokan === 'undefined') {
@@ -45,6 +42,12 @@ jQuery(document).ready(function($) {
         $whatsappErrorMessage.hide();
     }
 
+    // Función para validar el formato del número de teléfono en el cliente
+    function isValidPhoneNumber(number) {
+        // Permite un '+' opcional al inicio, seguido de solo dígitos. Mínimo 7 dígitos.
+        return /^\+?\d{7,}$/.test(number);
+    }
+
     // Función para verificar el estado de la sesión
     function checkStatus() {
         hideErrorMessage();
@@ -87,7 +90,12 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr) {
-                showErrorMessage(xhr.responseJSON ? xhr.responseJSON.message : i18n.error + ' ' + i18n.failedToGetStatus);
+                // Manejar errores de nonce específicos si el servidor los devuelve con un código HTTP 403
+                if (xhr.status === 403 && xhr.responseJSON && xhr.responseJSON.code === 'rest_nonce_invalid') {
+                    showErrorMessage(i18n.error + ' ' + xhr.responseJSON.message + ' ' + i18n.refreshPage); // Opcional: i18n.refreshPage
+                } else {
+                    showErrorMessage(xhr.responseJSON ? xhr.responseJSON.message : i18n.error + ' ' + i18n.failedToGetStatus);
+                }
                 updateStatusUI('error');
                 $qrLoadingMessage.hide();
             }
@@ -128,7 +136,11 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr) {
-                showErrorMessage(xhr.responseJSON ? xhr.responseJSON.message : i18n.error + ' ' + i18n.failedToGenerateQr);
+                if (xhr.status === 403 && xhr.responseJSON && xhr.responseJSON.code === 'rest_nonce_invalid') {
+                    showErrorMessage(i18n.error + ' ' + xhr.responseJSON.message + ' ' + i18n.refreshPage);
+                } else {
+                    showErrorMessage(xhr.responseJSON ? xhr.responseJSON.message : i18n.error + ' ' + i18n.failedToGenerateQr);
+                }
                 $qrLoadingMessage.hide();
                 updateStatusUI('error');
             }
@@ -153,6 +165,12 @@ jQuery(document).ready(function($) {
             return;
         }
 
+        // **Validación de número de teléfono en el cliente**
+        if (!isValidPhoneNumber(to)) {
+            showErrorMessage(i18n.invalidNumber);
+            return;
+        }
+
         $('#test_message_response').html('<p class="dokan-text-info">' + i18n.sendingMessage + '</p>');
 
         $.ajax({
@@ -173,7 +191,11 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr) {
-                $('#test_message_response').html('<p class="dokan-text-danger">' + i18n.error + ': ' + (xhr.responseJSON ? xhr.responseJSON.message : 'An unknown error occurred.') + '</p>');
+                if (xhr.status === 403 && xhr.responseJSON && xhr.responseJSON.code === 'rest_nonce_invalid') {
+                    showErrorMessage(i18n.error + ' ' + xhr.responseJSON.message + ' ' + i18n.refreshPage);
+                } else {
+                    $('#test_message_response').html('<p class="dokan-text-danger">' + i18n.error + ': ' + (xhr.responseJSON ? xhr.responseJSON.message : 'An unknown error occurred.') + '</p>');
+                }
             }
         });
     });

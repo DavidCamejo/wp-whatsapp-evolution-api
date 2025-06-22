@@ -45,7 +45,8 @@ class N8n_Webhook_Dispatcher {
      */
     public function send_event( $eventType, $payload ) {
         if ( empty( $this->n8n_base_url ) ) {
-            $this->log_event( 'error', 'N8n Base URL no configurada.', [ 'event_type' => $eventType, 'payload' => $payload ] );
+            // Usamos WA_Logger en lugar de error_log directamente
+            WA_Logger::log( 'N8n Base URL no configurada.', 'error', [ 'event_type' => $eventType, 'payload' => $payload ] );
             return new WP_Error( 'n8n_config_error', 'La URL base de n8n no está configurada en los ajustes del plugin.' );
         }
 
@@ -54,7 +55,7 @@ class N8n_Webhook_Dispatcher {
         $url = trailingslashit( $this->n8n_base_url ) . sanitize_title( $eventType );
 
         $args = [
-            'body'        => json_encode( $payload ),
+            'body'        => wp_json_encode( $payload ), // Usar wp_json_encode para consistencia
             'headers'     => [
                 'Content-Type' => 'application/json',
             ],
@@ -71,10 +72,11 @@ class N8n_Webhook_Dispatcher {
         $response = wp_remote_post( $url, $args );
 
         if ( is_wp_error( $response ) ) {
-            $this->log_event( 'error', 'Error al enviar evento a n8n.', [
+            WA_Logger::log( 'Error al enviar evento a n8n.', 'error', [
                 'event_type' => $eventType,
                 'payload'    => $payload,
                 'error'      => $response->get_error_message(),
+                'url'        => $url,
             ] );
             return $response;
         }
@@ -83,49 +85,35 @@ class N8n_Webhook_Dispatcher {
         $body      = wp_remote_retrieve_body( $response );
 
         if ( $http_code < 200 || $http_code >= 300 ) {
-            $this->log_event( 'error', 'N8n devolvió un error HTTP.', [
+            WA_Logger::log( 'N8n devolvió un error HTTP.', 'error', [
                 'event_type'    => $eventType,
                 'payload'       => $payload,
                 'http_code'     => $http_code,
                 'response_body' => $body,
+                'url'           => $url,
             ] );
             return new WP_Error( 'n8n_response_error', 'Error al procesar el evento en n8n.', [ 'status' => $http_code, 'body' => $body ] );
         }
 
         $parsed_body = json_decode( $body, true );
         if ( json_last_error() !== JSON_ERROR_NONE ) {
-            $this->log_event( 'warning', 'Respuesta de n8n no es un JSON válido.', [
+            WA_Logger::log( 'Respuesta de n8n no es un JSON válido.', 'warning', [
                 'event_type'    => $eventType,
                 'payload'       => $payload,
                 'http_code'     => $http_code,
                 'response_body' => $body,
+                'url'           => $url,
             ] );
             // Si no es JSON, devolvemos el cuerpo crudo.
             return $body;
         }
 
-        $this->log_event( 'info', 'Evento enviado a n8n exitosamente.', [
+        WA_Logger::log( 'Evento enviado a n8n exitosamente.', 'info', [
             'event_type'    => $eventType,
             'payload'       => $payload,
             'response_body' => $parsed_body,
+            'url'           => $url,
         ] );
         return $parsed_body;
-    }
-
-    /**
-     * Helper para generar logs del plugin.
-     *
-     * @param string $level Nivel del log (info, warning, error).
-     * @param string $message Mensaje del log.
-     * @param array $context Contexto adicional para el log.
-     */
-    private function log_event( $level, $message, $context = [] ) {
-        $log_message = sprintf( "WP-WhatsApp-Evolution-API n8n Dispatcher [%s]: %s", strtoupper( $level ), $message );
-        if ( ! empty( $context ) ) {
-            $log_message .= ' Contexto: ' . json_encode( $context );
-        }
-
-        error_log( $log_message );
-        do_action( 'wp_whatsapp_evolution_api_log', $level, $message, $context );
     }
 }

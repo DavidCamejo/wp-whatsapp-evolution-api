@@ -37,6 +37,7 @@ class WP_Whatsapp_Evolution_API_Public {
      */
     private function get_current_dokan_vendor_id() {
         if ( ! function_exists( 'dokan_is_vendor' ) ) {
+            WA_Logger::log( 'Dokan no está activo al intentar obtener el ID del vendedor.', 'error' );
             return false; // Dokan no está activo o no es un vendedor.
         }
 
@@ -44,14 +45,16 @@ class WP_Whatsapp_Evolution_API_Public {
         if ( $user_id && dokan_is_vendor( $user_id ) ) {
             return $user_id;
         }
+        WA_Logger::log( 'Usuario actual no es un vendedor Dokan o no está logueado.', 'warning', [ 'user_id' => $user_id ] );
         return false;
     }
 
     /**
      * Callback de permisos para las rutas REST: solo permite el acceso a vendedores de Dokan.
+     * También verifica el nonce.
      *
      * @param WP_REST_Request $request La solicitud REST.
-     * @return bool|WP_Error True si está autenticado como vendedor de Dokan, WP_Error de lo contrario.
+     * @return bool|WP_Error True si está autenticado como vendedor de Dokan y el nonce es válido, WP_Error de lo contrario.
      */
     public function dokan_vendor_permission_callback( WP_REST_Request $request ) {
         $vendor_id = $this->get_current_dokan_vendor_id();
@@ -63,12 +66,39 @@ class WP_Whatsapp_Evolution_API_Public {
                 [ 'status' => 401 ]
             );
         }
+
+        // **Verificación de Nonce explícita para solicitudes REST.**
+        // Aunque WP_REST_Server::check_authentication ya maneja nonces para usuarios logueados,
+        // añadir una verificación explícita aquí asegura que el nonce sea el esperado por nuestro plugin
+        // y añade una capa extra de seguridad para nuestras rutas custom.
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            WA_Logger::log( 'Nonce inválido o ausente en solicitud REST.', 'warning', [ 'user_id' => $vendor_id, 'nonce_received' => $nonce ] );
+            return new WP_Error(
+                'rest_nonce_invalid',
+                __( 'Nonce verification failed.', 'wp-whatsapp-evolution-api' ),
+                [ 'status' => 403 ]
+            );
+        }
+
         return true;
     }
 
     /**
+     * Valida un número de teléfono.
+     * Permite un '+' opcional al inicio seguido de solo dígitos.
+     *
+     * @param string $phone_number El número de teléfono a validar.
+     * @return bool True si el número es válido, false en caso contrario.
+     */
+    private function validate_phone_number( $phone_number ) {
+        // Expresión regular para permitir un '+' opcional al inicio, seguido de solo dígitos.
+        // Mínimo de 7 dígitos para un número de teléfono real.
+        return preg_match( '/^\+?\d{7,}$/', $phone_number );
+    }
+
+    /**
      * Registra las rutas personalizadas de la API REST de WordPress.
-     * Cada ruta actuará como un punto de entrada para los eventos de n8n.
      */
     public function register_rest_routes() {
         // Ruta para obtener el código QR para la sesión de un vendedor específico
@@ -76,7 +106,6 @@ class WP_Whatsapp_Evolution_API_Public {
             'methods'             => 'GET',
             'callback'            => [ $this, 'get_vendor_qr_code' ],
             'permission_callback' => [ $this, 'dokan_vendor_permission_callback' ],
-            // session_name ahora se deriva del ID del vendedor, ya no es un argumento directo.
         ] );
 
         // Ruta para enviar un mensaje de WhatsApp (desde la sesión de un vendedor)
@@ -90,6 +119,7 @@ class WP_Whatsapp_Evolution_API_Public {
                     'type'              => 'string',
                     'required'          => true,
                     'sanitize_callback' => 'sanitize_text_field',
+                    'validate_callback' => [ $this, 'validate_phone_number' ], // **Nueva validación**
                 ],
                 'message'      => [
                     'description'       => 'Contenido del mensaje a enviar.',
@@ -97,7 +127,6 @@ class WP_Whatsapp_Evolution_API_Public {
                     'required'          => true,
                     'sanitize_callback' => 'sanitize_text_field',
                 ],
-                // session_name se deriva del ID del vendedor, ya no es un argumento directo.
             ],
         ] );
 
@@ -106,7 +135,6 @@ class WP_Whatsapp_Evolution_API_Public {
             'methods'             => 'GET',
             'callback'            => [ $this, 'get_vendor_session_status' ],
             'permission_callback' => [ $this, 'dokan_vendor_permission_callback' ],
-            // session_name se deriva del ID del vendedor, ya no es un argumento directo.
         ] );
     }
 
@@ -117,7 +145,6 @@ class WP_Whatsapp_Evolution_API_Public {
      * @return string
      */
     private function get_vendor_session_name( $vendor_id ) {
-        // Usa un prefijo para evitar conflictos e identificar sesiones fácilmente en n8n/Evolution API.
         return 'dokan_vendor_' . $vendor_id;
     }
 
@@ -132,14 +159,15 @@ class WP_Whatsapp_Evolution_API_Public {
         $vendor_id    = $this->get_current_dokan_vendor_id();
         $session_name = $this->get_vendor_session_name( $vendor_id );
 
-        // Actualiza el estado de la sesión del vendedor a 'scanning_qr' o similar.
+        WA_Logger::log( 'Solicitud de QR para vendedor.', 'info', [ 'vendor_id' => $vendor_id, 'session_name' => $session_name ] );
+
         update_user_meta( $vendor_id, 'dokan_whatsapp_session_status', 'pending_qr_scan' );
         update_user_meta( $vendor_id, 'dokan_whatsapp_qr_code_url', '' ); // Limpia QR anterior
 
         $payload = [
             'eventType'   => 'qr_generation',
             'sessionName' => $session_name,
-            'vendorId'    => $vendor_id, // Pasa el ID del vendedor para el registro/identificación en n8n
+            'vendorId'    => $vendor_id,
         ];
 
         do_action( 'wp_whatsapp_evolution_api_before_qr_webhook', $payload );
@@ -147,6 +175,7 @@ class WP_Whatsapp_Evolution_API_Public {
         $response_from_n8n = $this->n8n_dispatcher->send_event( 'qr_generation', $payload );
 
         if ( is_wp_error( $response_from_n8n ) ) {
+            WA_Logger::log( 'Error al solicitar QR a n8n.', 'error', [ 'vendor_id' => $vendor_id, 'error' => $response_from_n8n->get_error_message() ] );
             return new WP_REST_Response( [
                 'success' => false,
                 'message' => 'Error al solicitar QR a n8n: ' . $response_from_n8n->get_error_message(),
@@ -154,18 +183,19 @@ class WP_Whatsapp_Evolution_API_Public {
             ], 500 );
         }
 
-        // Asumiendo que n8n devuelve una 'qrCodeUrl' o 'qrCodeImageBase64' en su respuesta.
         $qr_data = $response_from_n8n['data']['qrCodeUrl'] ?? ($response_from_n8n['data']['qrCodeImageBase64'] ?? '');
 
         if (!empty($qr_data)) {
-            // Almacena la URL/datos del QR temporalmente para mostrarlo en el dashboard del vendedor.
             update_user_meta( $vendor_id, 'dokan_whatsapp_qr_code_url', $qr_data );
+            WA_Logger::log( 'QR Code URL/data received and stored for vendor.', 'info', [ 'vendor_id' => $vendor_id, 'qr_data_length' => strlen($qr_data) ] );
+        } else {
+            WA_Logger::log( 'No QR Code URL/data received from n8n for vendor.', 'warning', [ 'vendor_id' => $vendor_id, 'n8n_response' => $response_from_n8n ] );
         }
 
         return new WP_REST_Response( [
             'success' => true,
             'message' => 'Solicitud de generación de QR enviada a n8n.',
-            'data'    => $response_from_n8n, // Contiene la respuesta procesada de n8n (ej. URL del QR, datos de la imagen)
+            'data'    => $response_from_n8n,
         ], 200 );
     }
 
@@ -180,15 +210,11 @@ class WP_Whatsapp_Evolution_API_Public {
         $vendor_id    = $this->get_current_dokan_vendor_id();
         $session_name = $this->get_vendor_session_name( $vendor_id );
 
+        // Los parámetros 'to' y 'message' ya fueron validados y sanitizados por los 'args' de register_rest_route
         $to           = $request->get_param( 'to' );
         $message      = $request->get_param( 'message' );
 
-        if ( empty( $to ) || empty( $message ) ) {
-            return new WP_REST_Response( [
-                'success' => false,
-                'message' => 'Los campos "to" y "message" son obligatorios.',
-            ], 400 );
-        }
+        WA_Logger::log( 'Solicitud de envío de mensaje para vendedor.', 'info', [ 'vendor_id' => $vendor_id, 'to' => $to ] );
 
         $payload = [
             'eventType'   => 'message_send',
@@ -203,6 +229,7 @@ class WP_Whatsapp_Evolution_API_Public {
         $response_from_n8n = $this->n8n_dispatcher->send_event( 'message_send', $payload );
 
         if ( is_wp_error( $response_from_n8n ) ) {
+            WA_Logger::log( 'Error al enviar mensaje a n8n.', 'error', [ 'vendor_id' => $vendor_id, 'error' => $response_from_n8n->get_error_message() ] );
             return new WP_REST_Response( [
                 'success' => false,
                 'message' => 'Error al enviar mensaje a n8n: ' . $response_from_n8n->get_error_message(),
@@ -210,10 +237,11 @@ class WP_Whatsapp_Evolution_API_Public {
             ], 500 );
         }
 
+        WA_Logger::log( 'Mensaje enviado a n8n exitosamente.', 'info', [ 'vendor_id' => $vendor_id, 'n8n_response' => $response_from_n8n ] );
         return new WP_REST_Response( [
             'success' => true,
             'message' => 'Solicitud de envío de mensaje enviada a n8n.',
-            'data'    => $response_from_n8n, // Contiene la respuesta de n8n sobre el envío
+            'data'    => $response_from_n8n,
         ], 200 );
     }
 
@@ -228,6 +256,8 @@ class WP_Whatsapp_Evolution_API_Public {
         $vendor_id    = $this->get_current_dokan_vendor_id();
         $session_name = $this->get_vendor_session_name( $vendor_id );
 
+        WA_Logger::log( 'Solicitud de estado de sesión para vendedor.', 'info', [ 'vendor_id' => $vendor_id, 'session_name' => $session_name ] );
+
         $payload = [
             'eventType'   => 'session_status',
             'sessionName' => $session_name,
@@ -239,6 +269,7 @@ class WP_Whatsapp_Evolution_API_Public {
         $response_from_n8n = $this->n8n_dispatcher->send_event( 'session_status', $payload );
 
         if ( is_wp_error( $response_from_n8n ) ) {
+            WA_Logger::log( 'Error al solicitar estado de sesión a n8n.', 'error', [ 'vendor_id' => $vendor_id, 'error' => $response_from_n8n->get_error_message() ] );
             return new WP_REST_Response( [
                 'success' => false,
                 'message' => 'Error al solicitar estado de sesión a n8n: ' . $response_from_n8n->get_error_message(),
@@ -246,23 +277,22 @@ class WP_Whatsapp_Evolution_API_Public {
             ], 500 );
         }
 
-        // Asumiendo que n8n devuelve un campo 'status' (ej. 'CONNECTED', 'DISCONNECTED', 'QRCODE', etc.)
         $session_status = $response_from_n8n['data']['status'] ?? 'unknown';
         update_user_meta( $vendor_id, 'dokan_whatsapp_session_status', sanitize_text_field( $session_status ) );
 
-        // Si el estado es 'QRCODE', el QR podría refrescarse, de lo contrario, se limpia.
         if ( isset( $response_from_n8n['data']['qrCodeUrl'] ) && 'QRCODE' === $session_status ) {
             update_user_meta( $vendor_id, 'dokan_whatsapp_qr_code_url', $response_from_n8n['data']['qrCodeUrl'] );
+            WA_Logger::log( 'Estado de sesión QRCODE y URL de QR recibida.', 'info', [ 'vendor_id' => $vendor_id, 'status' => $session_status ] );
         } else {
-            update_user_meta( $vendor_id, 'dokan_whatsapp_qr_code_url', '' ); // Limpia QR si no es QRCODE
+            update_user_meta( $vendor_id, 'dokan_whatsapp_qr_code_url', '' );
+            WA_Logger::log( 'Estado de sesión actualizado.', 'info', [ 'vendor_id' => $vendor_id, 'status' => $session_status ] );
         }
-
 
         return new WP_REST_Response( [
             'success' => true,
             'message' => 'Solicitud de estado de sesión enviada a n8n.',
-            'data'    => $response_from_n8n, // Contiene la respuesta de n8n sobre el estado de la sesión
-            'current_status' => $session_status, // Para visualización inmediata en el frontend
+            'data'    => $response_from_n8n,
+            'current_status' => $session_status,
         ], 200 );
     }
 }

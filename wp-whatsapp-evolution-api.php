@@ -3,7 +3,7 @@
  * Plugin Name: WP WhatsApp Evolution API (Dokan Vendor Integration with n8n)
  * Plugin URI:  https://github.com/DavidCamejo/wp-whatsapp-evolution-api/
  * Description: Integra WhatsApp con vendedores de Dokan utilizando n8n como intermediario para Evolution API.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      David Camejo (Refactorizado por Gemini)
  * Author URI:  https://davidcamejo.com/
  * License:     GPL-2.0+
@@ -41,7 +41,7 @@ final class WP_Whatsapp_Evolution_API {
      * Define las constantes del plugin.
      */
     private function define_constants() {
-        define( 'WP_WHATSAPP_EVOLUTION_API_VERSION', '1.0.0' );
+        define( 'WP_WHATSAPP_EVOLUTION_API_VERSION', '1.1.0' );
         define( 'WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
         define( 'WP_WHATSAPP_EVOLUTION_API_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
     }
@@ -50,6 +50,7 @@ final class WP_Whatsapp_Evolution_API {
      * Incluye los archivos necesarios.
      */
     private function includes() {
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wa-logger.php'; // Incluye la clase de logger
         require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-n8n-webhook-dispatcher.php';
         require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-public.php';
 
@@ -96,15 +97,14 @@ final class WP_Whatsapp_Evolution_API {
      * Lógica a ejecutar cuando el plugin se activa.
      */
     public function activate() {
-        // No hay lógica de DB compleja por ahora, pero se podría añadir aquí.
-        // Por ejemplo, asegurar que los user_meta para vendedores estén limpios o inicializados.
+        WA_Logger::log( 'Plugin activado.', 'info' );
     }
 
     /**
      * Lógica a ejecutar cuando el plugin se desactiva.
      */
     public function deactivate() {
-        // Opcional: limpiar user_meta o transients relacionados con WhatsApp si es necesario.
+        WA_Logger::log( 'Plugin desactivado.', 'info' );
     }
 
     /**
@@ -136,6 +136,7 @@ final class WP_Whatsapp_Evolution_API {
         if ( isset( $query_vars['whatsapp'] ) && $query_vars['whatsapp'] == 'whatsapp' ) {
             // Asegúrate de que solo los vendedores puedan ver esta página.
             if ( ! function_exists( 'dokan_is_vendor' ) || ! dokan_is_vendor( get_current_user_id() ) ) {
+                WA_Logger::log( 'Intento de acceso denegado a la página de WhatsApp Dokan.', 'warning', [ 'user_id' => get_current_user_id() ] );
                 wp_die( esc_html__( 'Acceso denegado.', 'wp-whatsapp-evolution-api' ) );
             }
 
@@ -150,6 +151,7 @@ final class WP_Whatsapp_Evolution_API {
                     'failedToSendMessage' => esc_html__( 'Failed to send message:', 'wp-whatsapp-evolution-api' ),
                     'error'               => esc_html__( 'Error:', 'wp-whatsapp-evolution-api' ),
                     'requiredFields'      => esc_html__( 'Please enter both recipient number and message.', 'wp-whatsapp-evolution-api' ),
+                    'invalidNumber'       => esc_html__( 'Please enter a valid phone number (only digits, optional + at start).', 'wp-whatsapp-evolution-api' ), // Nuevo mensaje i18n
                     'generatingQr'        => esc_html__( 'Generating QR code...', 'wp-whatsapp-evolution-api' ),
                     'qrGeneratedScan'     => esc_html__( 'QR code generated. Scan with your WhatsApp app.', 'wp-whatsapp-evolution-api' ),
                     'failedToGenerateQr'  => esc_html__( 'Failed to generate QR code.', 'wp-whatsapp-evolution-api' ),
