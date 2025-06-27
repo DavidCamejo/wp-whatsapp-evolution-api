@@ -2,8 +2,10 @@
 
 Todas las modificaciones notables a este proyecto serán documentadas en este archivo.
 
-## [1.1.0] - 2023-06-10
+## [1.1.0] - 2025-06-26
+
 ### Añadido
+
 - Sistema de seguridad para encriptar datos sensibles (tokens API, credenciales)
 - Sistema de caché inteligente para reducir llamadas a la API
 - Validador avanzado de números de teléfono con soporte internacional
@@ -11,6 +13,7 @@ Todas las modificaciones notables a este proyecto serán documentadas en este ar
 - Documentación mejorada y comentarios en el código
 
 ### Mejorado
+
 - Optimización general de rendimiento mediante caché
 - Mayor seguridad para tokens y datos confidenciales
 - Mejor manejo de errores en la comunicación con n8n
@@ -18,18 +21,23 @@ Todas las modificaciones notables a este proyecto serán documentadas en este ar
 - Código refactorizado para mejor mantenimiento
 
 ### Corregido
+
 - Problemas de validación en números de teléfono internacionales
 - Múltiples llamadas redundantes a la API
 - Potenciales vulnerabilidades en el almacenamiento de tokens
 
-## [1.0.1] - 2023-04-15
+## [1.0.1] - 2025-06-26
+
 ### Corregido
+
 - Error en la generación de QR cuando falta configuración n8n
 - Problemas de compatibilidad con PHP 8.0
 - Mensajes de error más claros cuando falla la conexión
 
-## [1.0.0] - 2023-03-01
+## [1.0.0] - 2025-06-21
+
 ### Añadido
+
 - Lanzamiento inicial
 - Integración de WhatsApp para vendedores Dokan
 - Generación de códigos QR para vincular cuentas
