@@ -39,6 +39,9 @@ class WP_Whatsapp_Evolution_API_Admin {
      * Registra los ajustes del plugin en WordPress.
      */
     public function register_settings() {
+        // Instancia de seguridad para manejar datos sensibles
+        $security = new WP_Whatsapp_Evolution_API_Security();
+        
         // Registrar la opción para la URL base de n8n
         register_setting(
             'wp_whatsapp_evolution_api_group', // Nombre del grupo de ajustes
@@ -51,13 +54,17 @@ class WP_Whatsapp_Evolution_API_Admin {
             ]
         );
 
-        // Registrar la opción para el token de autenticación de n8n
+        // Registrar la opción para el token de autenticación de n8n (encriptada)
         register_setting(
             'wp_whatsapp_evolution_api_group',
             'wp_whatsapp_evolution_api_n8n_auth_token',
             [
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_text_field', // Sanitiza como texto plano
+                'sanitize_callback' => function($token) use ($security) {
+                    // Sanitizar y luego encriptar el token para almacenamiento seguro
+                    $sanitized = sanitize_text_field($token);
+                    return $security->encrypt('n8n_auth_token', $sanitized);
+                },
                 'default'           => '',
                 'show_in_rest'      => false,
             ]
@@ -142,10 +149,12 @@ class WP_Whatsapp_Evolution_API_Admin {
      * Renderiza el campo de entrada para el token de autenticación de n8n.
      */
     public function n8n_auth_token_callback() {
-        $n8n_auth_token = get_option( 'wp_whatsapp_evolution_api_n8n_auth_token', '' );
+        // Usar la clase de seguridad para obtener el token desencriptado
+        $security = new WP_Whatsapp_Evolution_API_Security();
+        $n8n_auth_token = $security->get_secure_option('wp_whatsapp_evolution_api_n8n_auth_token', '');
         ?>
         <input type="text" name="wp_whatsapp_evolution_api_n8n_auth_token" value="<?php echo esc_attr( $n8n_auth_token ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Opcional: tu token de seguridad de n8n', 'wp-whatsapp-evolution-api' ); ?>" />
-        <p class="description"><?php esc_html_e( 'Si tu webhook de n8n requiere un token de seguridad (ej. para autenticación Bearer), ingrésalo aquí.', 'wp-whatsapp-evolution-api' ); ?></p>
+        <p class="description"><?php esc_html_e( 'Si tu webhook de n8n requiere un token de seguridad (ej. para autenticación Bearer), ingrésalo aquí. Se almacena de forma encriptada para mayor seguridad.', 'wp-whatsapp-evolution-api' ); ?></p>
         <?php
     }
 

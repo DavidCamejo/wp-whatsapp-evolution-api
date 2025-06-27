@@ -51,8 +51,12 @@ final class WP_Whatsapp_Evolution_API {
      */
     private function includes() {
         require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wa-logger.php'; // Incluye la clase de logger
-        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-n8n-webhook-dispatcher.php';
-        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-public.php';
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-cache.php'; // Sistema de caché
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-security.php'; // Sistema de seguridad
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-phone-validator.php'; // Validación de números
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-events.php'; // Sistema de eventos
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-n8n-webhook-dispatcher.php'; // Integración con n8n
+        require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'includes/class-wp-whatsapp-evolution-api-public.php'; // API pública
 
         if ( is_admin() ) {
             require_once WP_WHATSAPP_EVOLUTION_API_PLUGIN_DIR . 'admin/class-wp-whatsapp-evolution-api-admin.php';

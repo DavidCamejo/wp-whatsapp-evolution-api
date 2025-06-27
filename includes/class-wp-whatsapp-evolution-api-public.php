@@ -19,6 +19,20 @@ class WP_Whatsapp_Evolution_API_Public {
      * @var N8n_Webhook_Dispatcher
      */
     private $n8n_dispatcher;
+    
+    /**
+     * Instancia del validador de números de teléfono.
+     *
+     * @var WP_Whatsapp_Evolution_API_Phone_Validator
+     */
+    private $phone_validator;
+    
+    /**
+     * Instancia del sistema de eventos.
+     *
+     * @var WP_Whatsapp_Evolution_API_Events
+     */
+    private $events;
 
     /**
      * Constructor de la clase.
@@ -26,6 +40,9 @@ class WP_Whatsapp_Evolution_API_Public {
      */
     public function __construct() {
         $this->n8n_dispatcher = new N8n_Webhook_Dispatcher();
+        $this->phone_validator = new WP_Whatsapp_Evolution_API_Phone_Validator();
+        $this->events = WP_Whatsapp_Evolution_API_Events::get_instance();
+        
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
     }
 
@@ -85,16 +102,15 @@ class WP_Whatsapp_Evolution_API_Public {
     }
 
     /**
-     * Valida un número de teléfono.
-     * Permite un '+' opcional al inicio seguido de solo dígitos.
+     * Valida un número de teléfono usando el validador avanzado.
+     * Realiza validación específica por país cuando es posible.
      *
      * @param string $phone_number El número de teléfono a validar.
      * @return bool True si el número es válido, false en caso contrario.
      */
-    private function validate_phone_number( $phone_number ) {
-        // Expresión regular para permitir un '+' opcional al inicio, seguido de solo dígitos.
-        // Mínimo de 7 dígitos para un número de teléfono real.
-        return preg_match( '/^\+?\d{7,}$/', $phone_number );
+    private function validate_phone_number($phone_number) {
+        // Usar nuestro validador avanzado de teléfonos
+        return $this->phone_validator->is_valid_for_whatsapp($phone_number);
     }
 
     /**
@@ -206,43 +222,85 @@ class WP_Whatsapp_Evolution_API_Public {
      * @param WP_REST_Request $request La solicitud REST.
      * @return WP_REST_Response La respuesta HTTP.
      */
-    public function send_vendor_whatsapp_message( WP_REST_Request $request ) {
-        $vendor_id    = $this->get_current_dokan_vendor_id();
-        $session_name = $this->get_vendor_session_name( $vendor_id );
+    public function send_vendor_whatsapp_message(WP_REST_Request $request) {
+        $vendor_id = $this->get_current_dokan_vendor_id();
+        $session_name = $this->get_vendor_session_name($vendor_id);
 
         // Los parámetros 'to' y 'message' ya fueron validados y sanitizados por los 'args' de register_rest_route
-        $to           = $request->get_param( 'to' );
-        $message      = $request->get_param( 'message' );
+        $to = $request->get_param('to');
+        $message = $request->get_param('message');
+        
+        // Formatear el número de teléfono usando nuestro validador avanzado
+        $formatted_number = $this->phone_validator->format($to);
+        
+        // Disparar evento pre-envío de mensaje
+        $this->events->trigger_event('before_message_send', [
+            'vendor_id' => $vendor_id,
+            'to' => $formatted_number,
+            'message' => $message,
+            'original_number' => $to
+        ]);
 
-        WA_Logger::log( 'Solicitud de envío de mensaje para vendedor.', 'info', [ 'vendor_id' => $vendor_id, 'to' => $to ] );
+        WA_Logger::log('Solicitud de envío de mensaje para vendedor.', 'info', [
+            'vendor_id' => $vendor_id, 
+            'to' => $formatted_number,
+            'original_number' => $to
+        ]);
 
         $payload = [
-            'eventType'   => 'message_send',
+            'eventType' => 'message_send',
             'sessionName' => $session_name,
-            'to'          => $to,
-            'message'     => $message,
-            'vendorId'    => $vendor_id,
+            'to' => $formatted_number,  // Usar el número formateado
+            'message' => $message,
+            'vendorId' => $vendor_id,
         ];
 
-        do_action( 'wp_whatsapp_evolution_api_before_message_webhook', $payload );
+        // Para compatibilidad con plugins anteriores
+        do_action('wp_whatsapp_evolution_api_before_message_webhook', $payload);
 
-        $response_from_n8n = $this->n8n_dispatcher->send_event( 'message_send', $payload );
+        // Usar el método con caché automática - no caché para envíos de mensajes
+        $response_from_n8n = $this->n8n_dispatcher->send_event_with_auto_cache('message_send', $payload);
 
-        if ( is_wp_error( $response_from_n8n ) ) {
-            WA_Logger::log( 'Error al enviar mensaje a n8n.', 'error', [ 'vendor_id' => $vendor_id, 'error' => $response_from_n8n->get_error_message() ] );
-            return new WP_REST_Response( [
+        if (is_wp_error($response_from_n8n)) {
+            WA_Logger::log('Error al enviar mensaje a n8n.', 'error', [
+                'vendor_id' => $vendor_id, 
+                'error' => $response_from_n8n->get_error_message()
+            ]);
+            
+            // Disparar evento de error
+            $this->events->trigger_event('message_send_error', [
+                'vendor_id' => $vendor_id,
+                'to' => $formatted_number,
+                'message' => $message,
+                'error' => $response_from_n8n->get_error_message()
+            ]);
+            
+            return new WP_REST_Response([
                 'success' => false,
                 'message' => 'Error al enviar mensaje a n8n: ' . $response_from_n8n->get_error_message(),
-                'code'    => $response_from_n8n->get_error_code(),
-            ], 500 );
+                'code' => $response_from_n8n->get_error_code(),
+            ], 500);
         }
 
-        WA_Logger::log( 'Mensaje enviado a n8n exitosamente.', 'info', [ 'vendor_id' => $vendor_id, 'n8n_response' => $response_from_n8n ] );
-        return new WP_REST_Response( [
+        // Disparar evento de éxito
+        $this->events->trigger_event('message_sent', [
+            'vendor_id' => $vendor_id,
+            'to' => $formatted_number,
+            'message' => $message,
+            'response' => $response_from_n8n
+        ]);
+
+        WA_Logger::log('Mensaje enviado a n8n exitosamente.', 'info', [
+            'vendor_id' => $vendor_id, 
+            'n8n_response' => $response_from_n8n
+        ]);
+        
+        return new WP_REST_Response([
             'success' => true,
             'message' => 'Solicitud de envío de mensaje enviada a n8n.',
-            'data'    => $response_from_n8n,
-        ], 200 );
+            'data' => $response_from_n8n,
+            'to_formatted' => $formatted_number  // Devolver el número formateado para referencia
+        ], 200);
     }
 
     /**
