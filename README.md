@@ -36,6 +36,10 @@ Este plugin resuelve el desafío de integrar WhatsApp para múltiples vendedores
 - **Envío de Mensajes de Prueba**: Un formulario simple para que los vendedores envíen mensajes de prueba y confirmen la funcionalidad.
 - **Intermediario n8n Flexible**: Utiliza n8n para orquestar las llamadas a Evolution API, lo que permite una personalización y expansión sencilla de los flujos de trabajo sin modificar el código del plugin.
 - **Configuración Centralizada de n8n**: El administrador del sitio configura la URL base y el token de autenticación de n8n una sola vez.
+- **Sistema de Seguridad Avanzado**: Encriptación de datos sensibles como tokens y claves API.
+- **Sistema de Caché Inteligente**: Reducción de llamadas a la API almacenando temporalmente respuestas frecuentes.
+- **Validación Avanzada de Números**: Detecta y formatea correctamente números de teléfono para diferentes países.
+- **Sistema de Eventos**: Arquitectura basada en eventos que permite a otros plugins y temas conectar con la funcionalidad de WhatsApp.
 - **Limpieza Segura de Datos**: Opción para eliminar todos los datos del plugin (configuraciones y datos de conexión de vendedores) al desinstalarlo.
 
 ---
